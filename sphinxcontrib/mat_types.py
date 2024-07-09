@@ -806,7 +806,7 @@ class MatMixin(object):
         ):
             idx += 1
         return idx - idx0  # property spec count.
-
+    
     def _is_newline(self, idx):
         """Returns true if the token at index is a newline"""
         return (
@@ -1482,17 +1482,21 @@ class MatClass(MatMixin, MatObject):
                             # Initialize property if it was not already done
                             if enum_name not in self.enumerations.keys():
                                 self.enumerations[enum_name] = {}
-
-                            # skip size, class and functions specifiers
-                            # TODO: parse args and do a postprocessing step.
+                            
+                            # This is because matlab allows comma separated list of enums. 
+                            if self._tk_eq(idx, (Token.Punctuation, ",")):
+                                # In this case there is also no docstring
+                                if "docstring" not in self.enumerations[enum_name].keys():
+                                    self.enumerations[enum_name]["docstring"] = None
+                                idx += 1
+                                continue
+                            
+                            # skip enum arguments % TODO parse them at least 
                             idx += self._propspec(idx)
 
                             if self._tk_eq(idx, (Token.Punctuation, ";")):
                                 continue
-
-                            # This is because matlab allows comma separated list of enums 
-                            if self._tk_eq(idx, (Token.Punctuation, ",")):
-                                continue
+                            
 
                         # subtype of Name EG Name.Builtin used as Name
                         elif self.tokens[idx][0] in Token.Name.subtypes:
@@ -1503,16 +1507,23 @@ class MatClass(MatMixin, MatObject):
                                 self.name,
                                 prop_name,
                             )
-                            self.properties[prop_name] = {"attrs": attr_dict}
                             idx += 1
 
-                            # skip size, class and functions specifiers
-                            # TODO: Parse old and new style property extras
+                            # This is because matlab allows comma separated list of enums. 
+                            if self._tk_eq(idx, (Token.Punctuation, ",")):
+                                # In this case there is also no docstring
+                                if "docstring" not in self.enumerations[enum_name].keys():
+                                    self.enumerations[enum_name]["docstring"] = None
+                                idx += 1
+                                continue
+
+                            # skip enum arguments
                             idx += self._propspec(idx)
 
                             if self._tk_eq(idx, (Token.Punctuation, ";")):
                                 continue
-
+                            
+                            
                         elif self._tk_eq(idx, (Token.Keyword, "end")):
                             idx += 1
                             break
@@ -1524,10 +1535,8 @@ class MatClass(MatMixin, MatObject):
                             if self._is_newline(idx):
                                 idx += 1
                                 # Property definition is finished; add missing values
-                                if "default" not in self.properties[prop_name].keys():
-                                    self.properties[prop_name]["default"] = None
-                                if "docstring" not in self.properties[prop_name].keys():
-                                    self.properties[prop_name]["docstring"] = None
+                                if "docstring" not in self.enumerations[enum_name].keys():
+                                    self.enumerations[enum_name]["docstring"] = None
 
                                 continue
                             elif self.tokens[idx][0] is Token.Comment:
@@ -1780,6 +1789,7 @@ class MatEnumeration(MatObject):
         super(MatEnumeration, self).__init__(name)
         self.cls = cls
         self.docstring = attrs["docstring"]
+        #self.params = attrs["params"]
         
     def ref_role(self):
         """Returns role to use for references to this object (e.g. when generating auto-links)"""

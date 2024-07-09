@@ -1539,7 +1539,7 @@ class MatInstanceAttributeDocumenter(MatAttributeDocumenter):
             "Constant"
         )
         is_enum = isinstance(member, MatEnumeration)
-        return is_instance_attr
+        return is_instance_attr or is_enum
 
     # def import_object(self):
     #     """Never import anything."""
