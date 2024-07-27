@@ -1500,7 +1500,7 @@ class MatInstanceAttributeDocumenter(MatAttributeDocumenter):
     because they are instance attributes (e.g. assigned in __init__).
     """
 
-    objtype = "instanceattribute"
+    objtype = "attribute"
     directivetype = "attribute"
     member_order = 60
 
